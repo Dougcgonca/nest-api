@@ -3,6 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
+
 @Injectable()
 
 
@@ -10,8 +11,17 @@ export class UserService {
 
   constructor(private readonly prisma: PrismaService) {
   }
-  create(createUserDto: CreateUserDto) {
-    return this.prisma.user.create({
+  async create(createUserDto: CreateUserDto) {
+    const { email }= createUserDto
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    
+    if (existingUser) {
+      throw new Error('O e-mail já está em uso.');
+    }
+
+      return this.prisma.user.create({
       data: createUserDto
     })
   }
@@ -21,20 +31,43 @@ export class UserService {
 
   }
 
-  findOne(id: number) {
+  async findOne(id: number) {
+    const alreadyExist= await this.prisma.user.findUnique({
+      where : { id }
+    })
+
+    if(!alreadyExist){
+      throw new Error('Não é possível encontrar um usuário que não existe')
+    }
     return this.prisma.user.findUnique({
       where: { id }
     })
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: number, updateUserDto: UpdateUserDto) {
+
+    const alreadyExist= await this.prisma.user.findUnique({
+      where : { id }
+    })
+
+    if(!alreadyExist){
+      throw new Error('Não é possível atualizar um usuário que não existe')
+    }
     return this.prisma.user.update({
       where: { id},
       data: updateUserDto
     })
   }
 
-  remove(id: number) {
+  async remove(id: number) {
+    const alreadyExist= await this.prisma.user.findUnique({
+      where : { id }
+    })
+
+    if(!alreadyExist){
+      throw new Error('Não é possível remover um usuário que não existe')
+    }
+    
     return this.prisma.user.delete({
       where: {id}
     })
